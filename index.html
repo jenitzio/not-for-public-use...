@@ -2,49 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>WebRTC Chat</title>
+<title>WebRTC Video Chat - Futuristic Boot</title>
 <style>
   body, html {
     margin: 0;
     padding: 0;
     font-family: 'Orbitron', sans-serif;
     height: 100%;
-    background: #0b0c10;
+    background: black;
     color: #00ffea;
+    overflow: hidden;
+  }
+
+  /* Boot overlay */
+  #intro {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #000000, #001122);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    z-index: 10;
   }
 
-  #chatBox {
-    width: 80%;
-    max-width: 600px;
-    height: 70vh;
-    background: rgba(0,0,0,0.7);
-    border-radius: 10px;
-    overflow-y: auto;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
+  #intro h1 {
+    font-size: 3em;
+    margin: 0.5em;
+    animation: glow 1.5s infinite alternate;
   }
 
-  .msg {
-    margin: 5px 0;
-    padding: 8px;
-    border-radius: 8px;
-    word-wrap: break-word;
+  #intro .progress {
+    margin-top: 20px;
+    font-size: 1.2em;
   }
 
-  #msgForm {
-    margin-top: 10px;
-    display: flex;
-    width: 80%;
-    max-width: 600px;
+  #passwordPrompt {
+    display: none;
+    margin-top: 30px;
   }
 
-  #msgInput {
-    flex: 1;
+  input[type="password"] {
     padding: 10px;
     border-radius: 6px;
     border: none;
@@ -52,34 +52,165 @@
   }
 
   button {
-    margin-left: 5px;
+    margin-left: 10px;
     padding: 10px;
-    border-radius: 6px;
     border: none;
+    border-radius: 6px;
     background: #00ffea;
     color: black;
     cursor: pointer;
     font-weight: bold;
   }
+
+  @keyframes glow {
+    from { text-shadow: 0 0 5px #00ffea; }
+    to { text-shadow: 0 0 20px #00ffee; }
+  }
+
+  /* Lobby and WebRTC */
+  #lobby {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 100vh;
+    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+    color: white;
+    z-index: 3;
+    position: relative;
+  }
+  #lobby video {
+    width: 300px;
+    height: 200px;
+    background: black;
+    border-radius: 8px;
+  }
+  #video-grid {
+    display: none;
+    flex: 1;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-auto-rows: minmax(150px, auto);
+    gap: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    display: grid;
+    position: relative;
+    z-index: 1;
+  }
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    background: black;
+  }
+  #controls {
+    display: none;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.6);
+    z-index: 2;
+    position: relative;
+  }
+
+  /* Canvas for animated background */
+  #bgCanvas {
+    position: absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    z-index:0;
+  }
 </style>
 </head>
 <body>
 
-<h1>💬 WebRTC Chat</h1>
+<!-- Background Canvas -->
+<canvas id="bgCanvas"></canvas>
 
-<div id="chatBox"></div>
+<!-- Futuristic boot intro -->
+<div id="intro">
+  <h1>🚀 Welcome to Your App</h1>
+  <div class="progress" id="progressText">Initializing...</div>
+  <div id="passwordPrompt">
+    <input id="passcode" type="password" placeholder="Enter Passcode">
+    <button id="enterBtn">Enter</button>
+  </div>
+</div>
 
-<form id="msgForm">
-  <input id="msgInput" placeholder="Type a message..." autocomplete="off">
-  <button type="submit">Send</button>
-</form>
+<!-- Lobby -->
+<div id="lobby">
+  <video id="lobbyVideo" autoplay muted></video>
+  <div>
+    <button id="toggleMicLobby">🎤 Toggle Mic</button>
+    <button id="toggleCamLobby">📷 Toggle Cam</button>
+    <button id="joinBtn">Join Room</button>
+    <button id="leaveLobbyBtn">❌ Leave</button>
+    <button id="chatBtn">💬 Go to Chat</button>
+  </div>
+</div>
+
+<!-- Video grid -->
+<div id="video-grid"></div>
+
+<!-- Controls -->
+<div id="controls">
+  <button id="toggleVideo">📷 Toggle Video</button>
+  <button id="toggleAudio">🎤 Toggle Mic</button>
+  <button id="leaveBtn">❌ Leave</button>
+</div>
 
 <script>
+/* Boot animation & passcode */
+const bootSteps = [
+  "Updating app...",
+  "Installing features...",
+  "Booting features...",
+  "Increasing max capacity..."
+];
+const intro = document.getElementById("intro");
+const progressText = document.getElementById("progressText");
+const passwordPrompt = document.getElementById("passwordPrompt");
+const passInput = document.getElementById("passcode");
+const enterBtn = document.getElementById("enterBtn");
+let stepIndex = 0;
+function runBootSequence() {
+  if(stepIndex < bootSteps.length){
+    progressText.textContent = bootSteps[stepIndex];
+    stepIndex++;
+    setTimeout(runBootSequence, 2500);
+  } else {
+    progressText.textContent = "Enter Passcode to Continue:";
+    passwordPrompt.style.display = "block";
+  }
+}
+enterBtn.onclick = () => {
+  const pass = passInput.value.trim();
+  if(pass === "skibiditoilet"){
+    intro.style.display = "none";
+    startLobby();
+  } else {
+    alert("Incorrect Passcode!");
+  }
+};
+
+/* Lobby & WebRTC */
 const SIGNAL_URL = "wss://web-rtc-signal-server2.jenitzio09.workers.dev/?key=skibiditoilet";
+let localStream, peers = {};
 const myId = Math.random().toString(36).substring(2,9);
-const chatBox = document.getElementById("chatBox");
-const msgForm = document.getElementById("msgForm");
-const msgInput = document.getElementById("msgInput");
+const lobby = document.getElementById("lobby");
+const lobbyVideo = document.getElementById("lobbyVideo");
+const toggleMicLobby = document.getElementById("toggleMicLobby");
+const toggleCamLobby = document.getElementById("toggleCamLobby");
+const joinBtn = document.getElementById("joinBtn");
+const leaveLobbyBtn = document.getElementById("leaveLobbyBtn");
+const chatBtn = document.getElementById("chatBtn");
+const videoGrid = document.getElementById("video-grid");
+const controls = document.getElementById("controls");
+const toggleVideo = document.getElementById("toggleVideo");
+const toggleAudio = document.getElementById("toggleAudio");
+const leaveBtn = document.getElementById("leaveBtn");
 const userColors = {};
 function getUserColor(id) {
   if(!userColors[id]){
@@ -89,35 +220,115 @@ function getUserColor(id) {
   return userColors[id];
 }
 
-const ws = new WebSocket(SIGNAL_URL);
+/* Lobby media */
+async function initLobby(){
+  localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+  lobbyVideo.srcObject = localStream;
+}
+toggleMicLobby.onclick = () => { localStream.getAudioTracks().forEach(track => track.enabled = !track.enabled); };
+toggleCamLobby.onclick = () => {
+  const enabled = !localStream.getVideoTracks()[0].enabled;
+  localStream.getVideoTracks().forEach(track => track.enabled = enabled);
+  lobbyVideo.style.display = enabled ? "block" : "none";
+};
+leaveLobbyBtn.onclick = () => window.location.reload();
 
-ws.onopen = () => {
-  ws.send(JSON.stringify({type:"join",id:myId}));
+/* Join Room only shows video, not chat */
+joinBtn.onclick = () => {
+  lobby.style.display = "none";
+  videoGrid.style.display = "grid";
+  controls.style.display = "flex";
+  initWebRTC();
 };
 
-ws.onmessage = (msg) => {
-  const data = JSON.parse(msg.data);
-  if(data.type === "chat" && data.from !== myId){
-    appendMsg("Friend", data.text, data.from);
+/* Go to chat page */
+chatBtn.onclick = () => {
+  window.open("https://5cb34377.reditnow.pages.dev", "_blank");
+};
+
+/* Add video helper */
+function addVideo(stream, id){
+  let video = document.getElementById("video-"+id);
+  if(!video){
+    video = document.createElement("video");
+    video.id = "video-"+id;
+    video.autoplay = true;
+    video.playsInline = true;
+    videoGrid.appendChild(video);
   }
-};
+  video.srcObject = stream;
+}
 
-msgForm.addEventListener("submit", e => {
-  e.preventDefault();
-  const msg = msgInput.value;
-  msgInput.value = "";
-  appendMsg("Me", msg, myId);
-  ws.send(JSON.stringify({type:"chat",from:myId,text:msg}));
+/* WebRTC signaling */
+function initWebRTC(){
+  const ws = new WebSocket(SIGNAL_URL);
+  ws.onopen = () => ws.send(JSON.stringify({type:"join",id:myId}));
+  ws.onmessage = async (msg) => {
+    const data = JSON.parse(msg.data);
+    if(data.type==="offer"){ const pc = createPeer(data.from); await pc.setRemoteDescription(new RTCSessionDescription(data.offer)); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer); ws.send(JSON.stringify({type:"answer",to:data.from,answer,from:myId})); }
+    else if(data.type==="answer"){ await peers[data.from].setRemoteDescription(new RTCSessionDescription(data.answer)); }
+    else if(data.type==="candidate"){ try{ await peers[data.from].addIceCandidate(new RTCIceCandidate(data.candidate)); }catch{} }
+    else if(data.type==="join" && data.id!==myId){ callUser(data.id); }
+  };
+
+  function createPeer(id){
+    const pc = new RTCPeerConnection();
+    peers[id] = pc;
+    localStream.getTracks().forEach(track=>pc.addTrack(track,localStream));
+    pc.ontrack = e=>addVideo(e.streams[0],id);
+    pc.onicecandidate = e=>{
+      if(e.candidate) ws.send(JSON.stringify({type:"candidate",to:id,from:myId,candidate:e.candidate}));
+    }
+    return pc;
+  }
+
+  async function callUser(id){
+    const pc = createPeer(id);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({type:"offer",to:id,from:myId,offer}));
+  }
+
+  /* Controls */
+  toggleVideo.onclick = () => { const enabled = !localStream.getVideoTracks()[0].enabled; localStream.getVideoTracks().forEach(track=>track.enabled=enabled); };
+  toggleAudio.onclick = () => { const enabled = !localStream.getAudioTracks()[0].enabled; localStream.getAudioTracks().forEach(track=>track.enabled=enabled); };
+  leaveBtn.onclick = () => { ws.close(); Object.values(peers).forEach(pc=>pc.close()); window.location.reload(); };
+}
+
+/* Start lobby after passcode */
+function startLobby(){
+  document.getElementById("lobby").style.display = "flex";
+  initLobby();
+}
+
+/* Matrix-style animated background */
+const canvas = document.getElementById("bgCanvas");
+const ctx = canvas.getContext("2d");
+let w = canvas.width = window.innerWidth;
+let h = canvas.height = window.innerHeight;
+const letters = "01";
+const fontSize = 16;
+const columns = Math.floor(w / fontSize);
+const drops = new Array(columns).fill(1);
+function drawMatrix() {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "#00ffea";
+  ctx.font = fontSize + "px monospace";
+  for(let i = 0; i < drops.length; i++){
+    const text = letters.charAt(Math.floor(Math.random()*letters.length));
+    ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+    if(drops[i]*fontSize > h && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 50);
+window.addEventListener("resize", ()=>{
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
 });
 
-function appendMsg(sender, text, id){
-  const div = document.createElement("div");
-  div.className = "msg";
-  div.style.background = getUserColor(id);
-  div.textContent = sender + ": " + text;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
+runBootSequence();
 </script>
 </body>
 </html>
