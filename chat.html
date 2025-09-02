@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WebRTC Chat</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Orbitron', sans-serif;
+    height: 100%;
+    background: #0b0c10;
+    color: #00ffea;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #chatBox {
+    width: 80%;
+    max-width: 600px;
+    height: 70vh;
+    background: rgba(0,0,0,0.7);
+    border-radius: 10px;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .msg {
+    margin: 5px 0;
+    padding: 8px;
+    border-radius: 8px;
+    word-wrap: break-word;
+  }
+
+  #msgForm {
+    margin-top: 10px;
+    display: flex;
+    width: 80%;
+    max-width: 600px;
+  }
+
+  #msgInput {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1em;
+  }
+
+  button {
+    margin-left: 5px;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    background: #00ffea;
+    color: black;
+    cursor: pointer;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>💬 WebRTC Chat</h1>
+
+<div id="chatBox"></div>
+
+<form id="msgForm">
+  <input id="msgInput" placeholder="Type a message..." autocomplete="off">
+  <button type="submit">Send</button>
+</form>
+
+<script>
+const SIGNAL_URL = "wss://web-rtc-signal-server2.jenitzio09.workers.dev/?key=skibiditoilet";
+const myId = Math.random().toString(36).substring(2,9);
+const chatBox = document.getElementById("chatBox");
+const msgForm = document.getElementById("msgForm");
+const msgInput = document.getElementById("msgInput");
+const userColors = {};
+function getUserColor(id) {
+  if(!userColors[id]){
+    const hue = Math.floor(Math.random()*360);
+    userColors[id] = `hsl(${hue},70%,70%)`;
+  }
+  return userColors[id];
+}
+
+const ws = new WebSocket(SIGNAL_URL);
+
+ws.onopen = () => {
+  ws.send(JSON.stringify({type:"join",id:myId}));
+};
+
+ws.onmessage = (msg) => {
+  const data = JSON.parse(msg.data);
+  if(data.type === "chat" && data.from !== myId){
+    appendMsg("Friend", data.text, data.from);
+  }
+};
+
+msgForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const msg = msgInput.value;
+  msgInput.value = "";
+  appendMsg("Me", msg, myId);
+  ws.send(JSON.stringify({type:"chat",from:myId,text:msg}));
+});
+
+function appendMsg(sender, text, id){
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.style.background = getUserColor(id);
+  div.textContent = sender + ": " + text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+</body>
+</html>
